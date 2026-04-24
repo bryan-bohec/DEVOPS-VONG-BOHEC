@@ -1,0 +1,29 @@
+Projet Microservices
+Organisation
+Pour ce projet, vous pouvez vous organiser par groupe de 4 à 6 élèves
+Objectif
+L'objectif est de créer une application de location de logement basée sur l’architecture
+des micro services. L'application doit être facile à utiliser et offrir une expérience fluide
+pour les locataires et les propriétaires.
+Fonctionnalités
+L'application devra fournir les fonctionnalités suivantes :
+ Interface utilisateur personnalisable pour les locataires et les propriétaires.
+ Recherche des logements disponibles par type, emplacement et budget.
+ Gestion des demandes d'inscription et des offres de location.
+ Réservation de logement
+ Suivi des demandes et des processus de location.
+Technologies
+Vous avez libre choix des technologies à adopter pour la réalisation de cette
+application aussi bien pour le stockage de données, le développement (Front, Back) et
+le déploiement
+Livrables attendues
+Livrables :
+• Un rapport détaillant
+o La conception de votre application (Découpage des services, Description
+de chacun des services, Descriptions des interactions entre les services)
+o La description des techno adoptées et en fonction de celles-ci
+ La gestion des interactions entre les services
+ La gestion de configuration
+ La gestion de l’authentification/ habilitations
+ La gestion de déploiement
+• La réalisation d’au moins 2 services identifiés 

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.claude/
+.env
+.env.local
+.env.*.local
+coverage/
+.DS_Store
+docker-data/
+
+frontend/dist/
+backend/**/node_modules/
+backend/**/dist/
+backend/**/.env
+backend/**/generated/

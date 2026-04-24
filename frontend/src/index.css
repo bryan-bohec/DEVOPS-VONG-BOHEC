@@ -1,0 +1,29 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: #0F766E;
+  color: white;
+  text-decoration: none;
+  border-radius: 0 0 8px 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+}
+
+.skip-link:focus {
+  top: 0;
+}
