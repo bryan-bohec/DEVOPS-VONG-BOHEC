@@ -7,19 +7,23 @@ interface ProxyRequestOptions {
   response: Response;
   targetBaseUrl: string;
   targetPath: string;
-  pathParams?: Record<string, string | number>;
+  pathParams?: Record<string, string | number | string[]>;
 }
 
 function buildTargetUrl(
   targetBaseUrl: string,
   targetPath: string,
-  pathParams: Record<string, string | number> = {},
+  pathParams: Record<string, string | number | string[]> = {},
 ) {
   const resolvedPath = targetPath.replace(/:(\w+)/g, (_match, key: string) => {
     const value = pathParams[key];
 
     if (value === undefined || value === null) {
       throw new Error(`MISSING_PATH_PARAM:${key}`);
+    }
+
+    if (Array.isArray(value)) {
+      throw new Error(`INVALID_PATH_PARAM:${key}`);
     }
 
     const segment = String(value);

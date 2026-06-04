@@ -102,8 +102,7 @@ export const propertyService = {
       return null;
     }
 
-    const hasDateRange = Boolean(checkIn && checkOut);
-    if (property.is_available === false || !hasDateRange) {
+    if (property.is_available === false || !checkIn || !checkOut) {
       return {
         property_id: property.id,
         available: property.is_available,
