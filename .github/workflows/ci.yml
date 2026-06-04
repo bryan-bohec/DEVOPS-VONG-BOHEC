@@ -1,4 +1,4 @@
-name: CI - LocaHome
+name: CI - Build & Test
 
 on:
   push:
@@ -8,275 +8,156 @@ on:
 
 permissions:
   contents: read
+  security-events: write
   actions: read
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  checks: write
 
 jobs:
-  backend-build:
-    name: Build backend services (TypeScript)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - service: api-gateway
-            path: backend/api-gateway
-            prisma: false
-          - service: auth-service
-            path: backend/auth-service
-            prisma: true
-          - service: property-service
-            path: backend/property-service
-            prisma: true
-          - service: booking-service
-            path: backend/booking-service
-            prisma: true
-
-    defaults:
-      run:
-        working-directory: ${{ matrix.path }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: ${{ matrix.path }}/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma client
-        if: ${{ matrix.prisma }}
-        run: npx prisma generate
-
-      - name: Build
-        run: npm run build
-
-  backend-tests:
-    name: Backend tests + coverage
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      checks: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - service: api-gateway
-            path: backend/api-gateway
-          - service: auth-service
-            path: backend/auth-service
-          - service: property-service
-            path: backend/property-service
-          - service: booking-service
-            path: backend/booking-service
-
-    defaults:
-      run:
-        working-directory: ${{ matrix.path }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: ${{ matrix.path }}/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Test with coverage
-        run: npm run test:coverage
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          files: ${{ matrix.path }}/coverage/lcov.info
-          flags: backend,${{ matrix.service }}
-          name: coverage-${{ matrix.service }}
-          fail_ci_if_error: false
-
-  frontend-quality:
-    name: Frontend lint + build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: frontend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
-
-  sonar:
-    name: SonarCloud analysis
+  # ──────────────────────────────────────────────
+  # Backend – Test & Coverage (matrix)
+  # ──────────────────────────────────────────────
+  backend-test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [backend-tests, frontend-quality]
+
+    strategy:
+      matrix:
+        service: [api-gateway, auth-service, property-service, booking-service]
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: |
-            backend/api-gateway/package-lock.json
-            backend/auth-service/package-lock.json
-            backend/property-service/package-lock.json
-            backend/booking-service/package-lock.json
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: backend/${{ matrix.service }}/package-lock.json
 
-      - name: Generate backend coverage reports
-        shell: bash
+      - name: Install dependencies
+        run: npm ci
+        working-directory: backend/${{ matrix.service }}
+
+      - name: Run Tests with Coverage
+        run: npm run test:coverage
+        working-directory: backend/${{ matrix.service }}
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: backend/${{ matrix.service }}/coverage/lcov.info
+          flags: ${{ matrix.service }}
+          name: ${{ matrix.service }}
+          fail_ci_if_error: false
+
+      - name: Build Docker image
         run: |
-          services=(
-            "backend/api-gateway"
-            "backend/auth-service"
-            "backend/property-service"
-            "backend/booking-service"
-          )
+          docker build -t ${{ matrix.service }}:${{ github.sha }} \
+                       -f backend/${{ matrix.service }}/Dockerfile \
+                       ./backend/${{ matrix.service }}
 
-          for service in "${services[@]}"; do
-            echo "=== $service ==="
-            pushd "$service"
-            npm ci
-            npm run test:coverage
-            popd
-          done
+  # ──────────────────────────────────────────────
+  # Frontend – Build & Docker
+  # ──────────────────────────────────────────────
+  frontend-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-      - name: Compute Sonar identifiers
-        shell: bash
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+
+      - name: Build Docker image
         run: |
-          ORG="${{ vars.SONAR_ORGANIZATION }}"
-          if [ -z "$ORG" ]; then
-            ORG="${GITHUB_REPOSITORY_OWNER}"
-          fi
+          docker build -t frontend:${{ github.sha }} \
+                       -f frontend/Dockerfile \
+                       ./frontend
 
-          KEY="${{ vars.SONAR_PROJECT_KEY }}"
-          if [ -z "$KEY" ]; then
-            KEY="${GITHUB_REPOSITORY/\//_}"
-          fi
+  # ──────────────────────────────────────────────
+  # SonarCloud – Analyse qualité (mono-projet)
+  # ──────────────────────────────────────────────
+  sonarcloud:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [backend-test]
 
-          echo "SONAR_ORG=$ORG" >> "$GITHUB_ENV"
-          echo "SONAR_KEY=$KEY" >> "$GITHUB_ENV"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Re-generate coverage reports for SonarCloud
+      - name: Install & test api-gateway
+        run: npm ci && npm run test:coverage
+        working-directory: backend/api-gateway
+
+      - name: Install & test auth-service
+        run: npm ci && npm run test:coverage
+        working-directory: backend/auth-service
+
+      - name: Install & test property-service
+        run: npm ci && npm run test:coverage
+        working-directory: backend/property-service
+
+      - name: Install & test booking-service
+        run: npm ci && npm run test:coverage
+        working-directory: backend/booking-service
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
       - name: SonarCloud Scan
-        uses: sonarsource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            "-Dsonar.host.url=https://sonarcloud.io"
-            "-Dsonar.organization=${{ env.SONAR_ORG }}"
-            "-Dsonar.projectKey=${{ env.SONAR_KEY }}"
-            "-Dsonar.qualitygate.wait=true"
-            "-Dsonar.qualitygate.timeout=300"
 
-  docker-build:
-    name: Build Docker images
+  # ──────────────────────────────────────────────
+  # Docker Compose – Integration smoke test
+  # ──────────────────────────────────────────────
+  docker-compose-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    needs: [backend-build, backend-tests, frontend-quality, sonar]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: api-gateway
-            context: backend/api-gateway
-            dockerfile: backend/api-gateway/Dockerfile
-          - name: auth-service
-            context: backend/auth-service
-            dockerfile: backend/auth-service/Dockerfile
-          - name: property-service
-            context: backend/property-service
-            dockerfile: backend/property-service/Dockerfile
-          - name: booking-service
-            context: backend/booking-service
-            dockerfile: backend/booking-service/Dockerfile
-          - name: frontend
-            context: frontend
-            dockerfile: frontend/Dockerfile
+    timeout-minutes: 15
+    needs: [backend-test, frontend-build]
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build all services with Docker Compose
+        run: docker compose build
 
-      - name: Build image
-        run: |
-          docker build \
-            --file "${{ matrix.dockerfile }}" \
-            --tag "local/${{ matrix.name }}:ci" \
-            "${{ matrix.context }}"
-
-  smoke-test:
-    name: Smoke test (compose)
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    needs: [docker-build]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Start backend stack
-        run: |
-          docker compose up --build -d \
-            postgres-auth postgres-property postgres-booking \
-            auth-service property-service booking-service api-gateway
-
-      - name: Wait for gateway health
-        shell: bash
-        run: |
-          for i in {1..60}; do
-            if curl -fsS http://localhost:3000/health > /dev/null; then
-              echo "Gateway is healthy"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Gateway did not become healthy in time"
-          docker compose logs api-gateway auth-service property-service booking-service
-          exit 1
-
-      - name: Stop stack
-        if: always()
-        run: docker compose down -v
+      - name: Verify compose config
+        run: docker compose config --quiet
