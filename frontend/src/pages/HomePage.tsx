@@ -3,9 +3,9 @@ import { Box, Typography, Button, Card, CardContent, Grid, Container, Stack } fr
 import { SearchRounded, CalendarMonthRounded, SpaceDashboardRounded, ArrowForward } from "@mui/icons-material";
 import type { User } from "../types";
 
-interface Props {
+type Props = Readonly<{
   user: User | null;
-}
+}>;
 
 export default function HomePage({ user }: Props) {
   return (

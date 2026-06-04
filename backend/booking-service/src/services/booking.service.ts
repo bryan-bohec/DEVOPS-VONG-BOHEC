@@ -82,7 +82,7 @@ export const bookingService = {
 
     const property = await propertyApi.getProperty(input.property_id);
 
-    if (!property || !property.is_available) {
+    if (!property?.is_available) {
       throw new Error("Property is not available.");
     }
 

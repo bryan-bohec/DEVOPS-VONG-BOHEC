@@ -35,9 +35,9 @@ import {
 import { getProperties, getBookings, updateBookingStatus, deleteProperty } from "../services/api";
 import type { Property, Booking, User } from "../types";
 
-interface Props {
+type Props = Readonly<{
   user: User;
-}
+}>;
 
 const statusColors: Record<string, "warning" | "success" | "error" | "default"> = {
   pending: "warning",

@@ -31,9 +31,9 @@ import {
 import { getProperties } from "../services/api";
 import type { Property, User } from "../types";
 
-interface Props {
+type Props = Readonly<{
   user: User | null;
-}
+}>;
 
 export default function PropertyListPage({ user }: Props) {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -73,6 +73,104 @@ export default function PropertyListPage({ user }: Props) {
     villa: "Villa",
   };
 
+  const countLabel = `${properties.length} logement${properties.length === 1 ? "" : "s"} trouvé${properties.length === 1 ? "" : "s"}`;
+
+  const renderResults = () => {
+    if (loading) {
+      return (
+        <Box sx={{ textAlign: "center", py: 10 }}>
+          <CircularProgress sx={{ color: "primary.main" }} />
+        </Box>
+      );
+    }
+
+    if (properties.length === 0) {
+      return (
+        <Box sx={{ textAlign: "center", py: 10 }}>
+          <Apartment sx={{ fontSize: 56, color: "divider", mb: 2 }} />
+          <Typography variant="h6" sx={{ mb: 1, color: "text.primary" }}>
+            Aucun logement trouvé
+          </Typography>
+          <Typography color="text.secondary">
+            Essayez de modifier vos filtres ou revenez plus tard.
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Grid container spacing={3}>
+        {properties.map((p) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={p.id}>
+            <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              <CardActionArea component={RouterLink} to={`/properties/${p.id}`} sx={{ flexGrow: 1, display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+                {p.image_url ? (
+                  <CardMedia
+                    component="img"
+                    height={200}
+                    image={p.image_url}
+                    alt={p.title}
+                    loading="lazy"
+                    sx={{ borderRadius: "16px 16px 0 0" }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      height: 200,
+                      bgcolor: "#F1F5F9",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    role="img"
+                    aria-label={`Image non disponible pour ${p.title}`}
+                  >
+                    <Apartment sx={{ fontSize: 48, color: "#CBD5E1" }} />
+                  </Box>
+                )}
+                <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
+                  <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                      {p.title}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ mb: 1.5, display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <LocationOnOutlined sx={{ fontSize: 16, color: "text.secondary" }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {p.city} · {typeLabels[p.type] || p.type}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ mb: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    <Chip
+                      icon={<BedOutlined sx={{ fontSize: 16 }} />}
+                      label={`${p.rooms} pièces`}
+                      size="small"
+                      variant="outlined"
+                      sx={{ borderColor: "divider" }}
+                    />
+                    <Chip
+                      icon={<PeopleOutlined sx={{ fontSize: 16 }} />}
+                      label={`${p.capacity} pers.`}
+                      size="small"
+                      variant="outlined"
+                      sx={{ borderColor: "divider" }}
+                    />
+                  </Box>
+                  <Typography sx={{ fontWeight: 700, color: "primary.main", fontVariantNumeric: "tabular-nums" }}>
+                    {p.price_per_night} €
+                    <Typography component="span" variant="body2" sx={{ fontWeight: 400, color: "text.secondary" }}>
+                      {" "}/ nuit
+                    </Typography>
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    );
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
       {/* Header */}
@@ -81,9 +179,7 @@ export default function PropertyListPage({ user }: Props) {
           <Typography variant="h4" component="h1" sx={{ mb: 0.5 }}>
             Logements disponibles
           </Typography>
-          <Typography color="text.secondary">
-            {!loading && `${properties.length} logement${properties.length !== 1 ? "s" : ""} trouvé${properties.length !== 1 ? "s" : ""}`}
-          </Typography>
+          <Typography color="text.secondary">{loading ? "Chargement..." : countLabel}</Typography>
         </Box>
         {user?.role === "owner" && (
           <Button
@@ -168,91 +264,7 @@ export default function PropertyListPage({ user }: Props) {
       </Paper>
 
       {/* Results */}
-      {loading ? (
-        <Box sx={{ textAlign: "center", py: 10 }}>
-          <CircularProgress sx={{ color: "primary.main" }} />
-        </Box>
-      ) : properties.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 10 }}>
-          <Apartment sx={{ fontSize: 56, color: "divider", mb: 2 }} />
-          <Typography variant="h6" sx={{ mb: 1, color: "text.primary" }}>
-            Aucun logement trouvé
-          </Typography>
-          <Typography color="text.secondary">
-            Essayez de modifier vos filtres ou revenez plus tard.
-          </Typography>
-        </Box>
-      ) : (
-        <Grid container spacing={3}>
-          {properties.map((p) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={p.id}>
-              <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                <CardActionArea component={RouterLink} to={`/properties/${p.id}`} sx={{ flexGrow: 1, display: "flex", flexDirection: "column", alignItems: "stretch" }}>
-                  {p.image_url ? (
-                    <CardMedia
-                      component="img"
-                      height={200}
-                      image={p.image_url}
-                      alt={p.title}
-                      loading="lazy"
-                      sx={{ borderRadius: "16px 16px 0 0" }}
-                    />
-                  ) : (
-                    <Box
-                      sx={{
-                        height: 200,
-                        bgcolor: "#F1F5F9",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      role="img"
-                      aria-label={`Image non disponible pour ${p.title}`}
-                    >
-                      <Apartment sx={{ fontSize: 48, color: "#CBD5E1" }} />
-                    </Box>
-                  )}
-                  <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
-                    <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-                        {p.title}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ mb: 1.5, display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <LocationOnOutlined sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {p.city} · {typeLabels[p.type] || p.type}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ mb: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
-                      <Chip
-                        icon={<BedOutlined sx={{ fontSize: 16 }} />}
-                        label={`${p.rooms} pièces`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ borderColor: "divider" }}
-                      />
-                      <Chip
-                        icon={<PeopleOutlined sx={{ fontSize: 16 }} />}
-                        label={`${p.capacity} pers.`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ borderColor: "divider" }}
-                      />
-                    </Box>
-                    <Typography sx={{ fontWeight: 700, color: "primary.main", fontVariantNumeric: "tabular-nums" }}>
-                      {p.price_per_night} €
-                      <Typography component="span" variant="body2" sx={{ fontWeight: 400, color: "text.secondary" }}>
-                        {" "}/ nuit
-                      </Typography>
-                    </Typography>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+      {renderResults()}
     </Container>
   );
 }

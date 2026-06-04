@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  checks: write
   actions: read
 
 concurrency:
@@ -66,6 +65,9 @@ jobs:
     name: Backend tests + coverage
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      checks: write
     strategy:
       fail-fast: false
       matrix:
@@ -136,11 +138,84 @@ jobs:
       - name: Build
         run: npm run build
 
+  sonar:
+    name: SonarCloud analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [backend-tests, frontend-quality]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            backend/api-gateway/package-lock.json
+            backend/auth-service/package-lock.json
+            backend/property-service/package-lock.json
+            backend/booking-service/package-lock.json
+
+      - name: Generate backend coverage reports
+        shell: bash
+        run: |
+          services=(
+            "backend/api-gateway"
+            "backend/auth-service"
+            "backend/property-service"
+            "backend/booking-service"
+          )
+
+          for service in "${services[@]}"; do
+            echo "=== $service ==="
+            pushd "$service"
+            npm ci
+            npm run test:coverage
+            popd
+          done
+
+      - name: Compute Sonar identifiers
+        shell: bash
+        run: |
+          ORG="${{ vars.SONAR_ORGANIZATION }}"
+          if [ -z "$ORG" ]; then
+            ORG="${GITHUB_REPOSITORY_OWNER}"
+          fi
+
+          KEY="${{ vars.SONAR_PROJECT_KEY }}"
+          if [ -z "$KEY" ]; then
+            KEY="${GITHUB_REPOSITORY/\//_}"
+          fi
+
+          echo "SONAR_ORG=$ORG" >> "$GITHUB_ENV"
+          echo "SONAR_KEY=$KEY" >> "$GITHUB_ENV"
+
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            "-Dsonar.host.url=https://sonarcloud.io"
+            "-Dsonar.organization=${{ env.SONAR_ORG }}"
+            "-Dsonar.projectKey=${{ env.SONAR_KEY }}"
+
+      - name: Sonar Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
+        timeout-minutes: 10
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   docker-build:
     name: Build Docker images
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: [backend-build, backend-tests, frontend-quality]
+    needs: [backend-build, backend-tests, frontend-quality, sonar]
     strategy:
       fail-fast: false
       matrix:

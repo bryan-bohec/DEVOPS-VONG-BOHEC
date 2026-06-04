@@ -18,9 +18,9 @@ import {
 import { createProperty } from "../services/api";
 import type { User } from "../types";
 
-interface Props {
+type Props = Readonly<{
   user: User;
-}
+}>;
 
 export default function CreatePropertyPage({ user }: Props) {
   const navigate = useNavigate();

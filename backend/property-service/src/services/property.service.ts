@@ -102,7 +102,7 @@ export const propertyService = {
       return null;
     }
 
-    if (!property.is_available || !checkIn || !checkOut) {
+    if (property.is_available === false || !checkIn || !checkOut) {
       return {
         property_id: property.id,
         available: property.is_available,

@@ -17,7 +17,7 @@ services:
     environment:
       PORT: 3000
       FRONTEND_ORIGIN: http://localhost:5173
-      JWT_SECRET: super-secret-jwt-key
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-me}
       AUTH_SERVICE_URL: http://auth-service:3001
       PROPERTY_SERVICE_URL: http://property-service:3002
       BOOKING_SERVICE_URL: http://booking-service:3003
@@ -33,8 +33,9 @@ services:
       - "3001:3001"
     environment:
       PORT: 3001
-      DATABASE_URL: postgresql://postgres:postgres@postgres-auth:5432/auth_db?schema=public
-      JWT_SECRET: super-secret-jwt-key
+      DATABASE_URL: postgresql://postgres:${POSTGRES_AUTH_PASSWORD:-dev-auth-db-password}@postgres-auth:5432/auth_db?schema=public
+      FRONTEND_ORIGIN: http://localhost:5173
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-me}
       JWT_EXPIRES_IN: 7d
     command: sh -c "npx prisma db push && npm run start"
     depends_on:
@@ -48,8 +49,9 @@ services:
       - "3002:3002"
     environment:
       PORT: 3002
-      DATABASE_URL: postgresql://postgres:postgres@postgres-property:5432/property_db?schema=public
-      JWT_SECRET: super-secret-jwt-key
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PROPERTY_PASSWORD:-dev-property-db-password}@postgres-property:5432/property_db?schema=public
+      FRONTEND_ORIGIN: http://localhost:5173
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-me}
       BOOKING_SERVICE_URL: http://booking-service:3003
     command: sh -c "npx prisma db push && npm run start"
     depends_on:
@@ -63,8 +65,9 @@ services:
       - "3003:3003"
     environment:
       PORT: 3003
-      DATABASE_URL: postgresql://postgres:postgres@postgres-booking:5432/booking_db?schema=public
-      JWT_SECRET: super-secret-jwt-key
+      DATABASE_URL: postgresql://postgres:${POSTGRES_BOOKING_PASSWORD:-dev-booking-db-password}@postgres-booking:5432/booking_db?schema=public
+      FRONTEND_ORIGIN: http://localhost:5173
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-me}
       PROPERTY_SERVICE_URL: http://property-service:3002
     command: sh -c "npx prisma db push && npm run start"
     depends_on:
@@ -80,7 +83,7 @@ services:
     environment:
       POSTGRES_DB: auth_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_AUTH_PASSWORD:-dev-auth-db-password}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
       interval: 3s
@@ -98,7 +101,7 @@ services:
     environment:
       POSTGRES_DB: property_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PROPERTY_PASSWORD:-dev-property-db-password}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d property_db"]
       interval: 3s
@@ -116,7 +119,7 @@ services:
     environment:
       POSTGRES_DB: booking_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_BOOKING_PASSWORD:-dev-booking-db-password}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d booking_db"]
       interval: 3s

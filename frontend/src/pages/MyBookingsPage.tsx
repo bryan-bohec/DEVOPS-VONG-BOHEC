@@ -25,9 +25,9 @@ import { CalendarMonthOutlined } from "@mui/icons-material";
 import { getBookings, updateBookingStatus } from "../services/api";
 import type { Booking, User } from "../types";
 
-interface Props {
+type Props = Readonly<{
   user: User;
-}
+}>;
 
 const statusColors: Record<string, "warning" | "success" | "error" | "default"> = {
   pending: "warning",
