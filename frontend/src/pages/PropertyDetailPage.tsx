@@ -13,7 +13,6 @@ import {
   Breadcrumbs,
   Link,
   Container,
-  Stack,
 } from "@mui/material";
 import {
   Apartment,
@@ -179,10 +178,10 @@ export default function PropertyDetailPage({ user }: Props) {
             {property.title}
           </Typography>
 
-          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 3, color: "text.secondary" }}>
+          <Box sx={{ mb: 3, color: "text.secondary", display: "flex", alignItems: "center", gap: 0.5 }}>
             <LocationOnOutlined fontSize="small" />
             <Typography>{property.address}, {property.city}</Typography>
-          </Stack>
+          </Box>
 
           <Grid container spacing={2} sx={{ mb: 4 }}>
             {[
@@ -230,7 +229,7 @@ export default function PropertyDetailPage({ user }: Props) {
               top: { md: 88 },
             }}
           >
-            <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 0.5 }}>
+            <Box sx={{ mb: 0.5, display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 1 }}>
               <Typography variant="h5" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
                 {property.price_per_night} €
                 <Typography component="span" variant="body2" sx={{ fontWeight: 400, color: "text.secondary" }}>
@@ -242,7 +241,7 @@ export default function PropertyDetailPage({ user }: Props) {
                 color={property.is_available ? "success" : "error"}
                 size="small"
               />
-            </Stack>
+            </Box>
 
             <Divider sx={{ my: 2.5 }} />
 
@@ -309,10 +308,10 @@ export default function PropertyDetailPage({ user }: Props) {
                   {bookingLoading ? <CircularProgress size={22} color="inherit" /> : "Réserver"}
                 </Button>
 
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2, justifyContent: "center" }}>
+                <Box sx={{ mt: 2, justifyContent: "center", display: "flex", alignItems: "center", gap: 1 }}>
                   <Box sx={{ width: 12, height: 12, bgcolor: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 0.5 }} />
                   <Typography variant="caption" color="text.secondary">Indisponible</Typography>
-                </Stack>
+                </Box>
               </>
             ) : !user ? (
               <Box sx={{ textAlign: "center", py: 1 }}>

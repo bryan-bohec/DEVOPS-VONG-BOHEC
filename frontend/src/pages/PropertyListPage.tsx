@@ -18,7 +18,6 @@ import {
   CircularProgress,
   Chip,
   Container,
-  Stack,
   InputAdornment,
 } from "@mui/material";
 import {
@@ -214,18 +213,18 @@ export default function PropertyListPage({ user }: Props) {
                     </Box>
                   )}
                   <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
+                    <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
                         {p.title}
                       </Typography>
-                    </Stack>
-                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1.5 }}>
+                    </Box>
+                    <Box sx={{ mb: 1.5, display: "flex", alignItems: "center", gap: 0.5 }}>
                       <LocationOnOutlined sx={{ fontSize: 16, color: "text.secondary" }} />
                       <Typography variant="body2" color="text.secondary">
                         {p.city} · {typeLabels[p.type] || p.type}
                       </Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                    </Box>
+                    <Box sx={{ mb: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
                       <Chip
                         icon={<BedOutlined sx={{ fontSize: 16 }} />}
                         label={`${p.rooms} pièces`}
@@ -240,7 +239,7 @@ export default function PropertyListPage({ user }: Props) {
                         variant="outlined"
                         sx={{ borderColor: "divider" }}
                       />
-                    </Stack>
+                    </Box>
                     <Typography sx={{ fontWeight: 700, color: "primary.main", fontVariantNumeric: "tabular-nums" }}>
                       {p.price_per_night} €
                       <Typography component="span" variant="body2" sx={{ fontWeight: 400, color: "text.secondary" }}>
