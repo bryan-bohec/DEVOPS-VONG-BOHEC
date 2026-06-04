@@ -24,7 +24,6 @@ import {
   DialogContentText,
   DialogActions,
   Container,
-  Stack,
 } from "@mui/material";
 import {
   CheckCircleOutlined,
@@ -198,7 +197,6 @@ export default function OwnerDashboard({ user }: Props) {
           value={tab}
           onChange={(_, v) => setTab(v)}
           sx={{ px: 2 }}
-          TabIndicatorProps={{ sx: { height: 3, borderRadius: 2 } }}
         >
           <Tab label="Mes logements" />
           <Tab label={`Réservations (${bookings.length})`} />
@@ -285,7 +283,7 @@ export default function OwnerDashboard({ user }: Props) {
                   </TableCell>
                   <TableCell>
                     {b.status === "pending" && (
-                      <Stack direction="row" spacing={1}>
+                      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                         <Button
                           size="small"
                           color="success"
@@ -306,7 +304,7 @@ export default function OwnerDashboard({ user }: Props) {
                         >
                           Refuser
                         </Button>
-                      </Stack>
+                      </Box>
                     )}
                   </TableCell>
                 </TableRow>

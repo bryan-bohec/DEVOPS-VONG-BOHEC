@@ -1,0 +1,211 @@
+name: CI - LocaHome
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: write
+  actions: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-build:
+    name: Build backend services (TypeScript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: api-gateway
+            path: backend/api-gateway
+            prisma: false
+          - service: auth-service
+            path: backend/auth-service
+            prisma: true
+          - service: property-service
+            path: backend/property-service
+            prisma: true
+          - service: booking-service
+            path: backend/booking-service
+            prisma: true
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        if: ${{ matrix.prisma }}
+        run: npx prisma generate
+
+      - name: Build
+        run: npm run build
+
+  backend-tests:
+    name: Backend tests + coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: api-gateway
+            path: backend/api-gateway
+          - service: auth-service
+            path: backend/auth-service
+          - service: property-service
+            path: backend/property-service
+          - service: booking-service
+            path: backend/booking-service
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ${{ matrix.path }}/coverage/lcov.info
+          flags: backend,${{ matrix.service }}
+          name: coverage-${{ matrix.service }}
+          fail_ci_if_error: false
+
+  frontend-quality:
+    name: Frontend lint + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  docker-build:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [backend-build, backend-tests, frontend-quality]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api-gateway
+            context: backend/api-gateway
+            dockerfile: backend/api-gateway/Dockerfile
+          - name: auth-service
+            context: backend/auth-service
+            dockerfile: backend/auth-service/Dockerfile
+          - name: property-service
+            context: backend/property-service
+            dockerfile: backend/property-service/Dockerfile
+          - name: booking-service
+            context: backend/booking-service
+            dockerfile: backend/booking-service/Dockerfile
+          - name: frontend
+            context: frontend
+            dockerfile: frontend/Dockerfile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: |
+          docker build \
+            --file "${{ matrix.dockerfile }}" \
+            --tag "local/${{ matrix.name }}:ci" \
+            "${{ matrix.context }}"
+
+  smoke-test:
+    name: Smoke test (compose)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start backend stack
+        run: |
+          docker compose up --build -d \
+            postgres-auth postgres-property postgres-booking \
+            auth-service property-service booking-service api-gateway
+
+      - name: Wait for gateway health
+        shell: bash
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:3000/health > /dev/null; then
+              echo "Gateway is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Gateway did not become healthy in time"
+          docker compose logs api-gateway auth-service property-service booking-service
+          exit 1
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
