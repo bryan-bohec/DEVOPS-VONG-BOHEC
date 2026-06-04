@@ -5,6 +5,29 @@ import Navbar from "./components/Navbar";
 import { getCurrentUser, setAuthToken } from "./services/api";
 import type { User } from "./types";
 
+function sanitizeTokenForStorage(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const token = value.trim();
+  if (token.length < 20 || token.length > 4096) {
+    return null;
+  }
+
+  // Accept JWT-like tokens only and reject any unexpected characters.
+  if (!/^[A-Za-z0-9._-]+$/.test(token)) {
+    return null;
+  }
+
+  const parts = token.split(".");
+  if (parts.length !== 3 || parts.some((part) => part.length === 0)) {
+    return null;
+  }
+
+  return token;
+}
+
 function sanitizeUserForStorage(value: unknown): User | null {
   if (typeof value !== "object" || value === null) {
     return null;
@@ -169,8 +192,11 @@ function App() {
 
   useEffect(() => {
     const restoreSession = async () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) return;
+      const token = sanitizeTokenForStorage(localStorage.getItem("accessToken"));
+      if (!token) {
+        localStorage.removeItem("accessToken");
+        return;
+      }
 
       setAuthToken(token);
       try {
@@ -181,11 +207,9 @@ function App() {
         }
 
         setUser(safeUser);
-        localStorage.setItem("user", JSON.stringify(safeUser));
       } catch {
         setAuthToken(null);
         localStorage.removeItem("accessToken");
-        localStorage.removeItem("user");
       }
     };
     restoreSession();
@@ -193,21 +217,24 @@ function App() {
 
   const handleLogin = (u: User, token: string) => {
     const safeUser = sanitizeUserForStorage(u);
-    if (!safeUser) {
+    const safeToken = sanitizeTokenForStorage(token);
+
+    if (!safeUser || !safeToken) {
+      setAuthToken(null);
+      setUser(null);
+      localStorage.removeItem("accessToken");
       return;
     }
 
-    setAuthToken(token);
+    setAuthToken(safeToken);
     setUser(safeUser);
-    localStorage.setItem("accessToken", token);
-    localStorage.setItem("user", JSON.stringify(safeUser));
+    localStorage.setItem("accessToken", safeToken);
   };
 
   const handleLogout = () => {
     setAuthToken(null);
     setUser(null);
     localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
   };
 
   return (
