@@ -63,7 +63,7 @@ jobs:
         run: npm run build
 
   backend-tests:
-    name: Backend tests
+    name: Backend tests + coverage
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -97,8 +97,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Test
-        run: npm test
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ${{ matrix.path }}/coverage/lcov.info
+          flags: backend,${{ matrix.service }}
+          name: coverage-${{ matrix.service }}
+          fail_ci_if_error: false
 
   frontend-quality:
     name: Frontend lint + build
