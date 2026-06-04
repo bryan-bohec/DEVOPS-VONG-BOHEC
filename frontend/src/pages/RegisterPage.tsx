@@ -23,8 +23,38 @@ import { register } from "../services/api";
 import axios from "axios";
 import type { User } from "../types";
 
-interface Props {
+type Props = Readonly<{
   onLogin: (user: User, token: string) => void;
+}>;
+
+function parseRegisterError(error: unknown) {
+  const fallback = {
+    message: "Erreur lors de l'inscription.",
+    fieldErrors: {} as Record<string, string>,
+  };
+
+  if (!axios.isAxiosError(error) || !error.response?.data) {
+    return fallback;
+  }
+
+  const data = error.response.data as {
+    message?: unknown;
+    fieldErrors?: Record<string, unknown>;
+  };
+
+  const fieldErrors: Record<string, string> = {};
+  const sourceFieldErrors = data.fieldErrors;
+
+  if (sourceFieldErrors && typeof sourceFieldErrors === "object") {
+    for (const [key, msgs] of Object.entries(sourceFieldErrors)) {
+      if (Array.isArray(msgs) && msgs.length > 0 && typeof msgs[0] === "string") {
+        fieldErrors[key] = msgs[0];
+      }
+    }
+  }
+
+  const message = typeof data.message === "string" ? data.message : fallback.message;
+  return { message, fieldErrors };
 }
 
 export default function RegisterPage({ onLogin }: Props) {
@@ -70,23 +100,9 @@ export default function RegisterPage({ onLogin }: Props) {
       onLogin(res.data.user, res.data.accessToken);
       navigate("/");
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.data) {
-        const data = err.response.data;
-        if (data.fieldErrors) {
-          const errs: Record<string, string> = {};
-          for (const [key, msgs] of Object.entries(data.fieldErrors)) {
-            if (Array.isArray(msgs) && msgs.length > 0) errs[key] = msgs[0] as string;
-          }
-          setFieldErrors(errs);
-        }
-        if (data.message) {
-          setError(data.message);
-        } else {
-          setError("Erreur lors de l'inscription.");
-        }
-      } else {
-        setError("Erreur lors de l'inscription.");
-      }
+      const parsed = parseRegisterError(err);
+      setFieldErrors(parsed.fieldErrors);
+      setError(parsed.message);
     } finally {
       setLoading(false);
     }

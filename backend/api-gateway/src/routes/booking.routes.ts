@@ -21,7 +21,8 @@ bookingRouter.get("/tenant/:tenantId", async (request, response) =>
     request,
     response,
     targetBaseUrl: env.BOOKING_SERVICE_URL,
-    targetPath: `/bookings/tenant/${request.params.tenantId}`,
+    targetPath: "/bookings/tenant/:tenantId",
+    pathParams: { tenantId: request.params.tenantId },
   }),
 );
 
@@ -30,7 +31,8 @@ bookingRouter.get("/owner/:ownerId", async (request, response) =>
     request,
     response,
     targetBaseUrl: env.BOOKING_SERVICE_URL,
-    targetPath: `/bookings/owner/${request.params.ownerId}`,
+    targetPath: "/bookings/owner/:ownerId",
+    pathParams: { ownerId: request.params.ownerId },
   }),
 );
 
@@ -39,7 +41,8 @@ bookingRouter.get("/:id", async (request, response) =>
     request,
     response,
     targetBaseUrl: env.BOOKING_SERVICE_URL,
-    targetPath: `/bookings/${request.params.id}`,
+    targetPath: "/bookings/:id",
+    pathParams: { id: request.params.id },
   }),
 );
 
@@ -57,6 +60,7 @@ bookingRouter.patch("/:id/status", async (request, response) =>
     request,
     response,
     targetBaseUrl: env.BOOKING_SERVICE_URL,
-    targetPath: `/bookings/${request.params.id}/status`,
+    targetPath: "/bookings/:id/status",
+    pathParams: { id: request.params.id },
   }),
 );

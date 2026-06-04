@@ -34,10 +34,10 @@ import {
 } from "@mui/icons-material";
 import type { User } from "../types";
 
-interface Props {
+type Props = Readonly<{
   user: User | null;
   onLogout: () => void;
-}
+}>;
 
 export default function Navbar({ user, onLogout }: Props) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);

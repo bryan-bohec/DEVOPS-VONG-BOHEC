@@ -2,11 +2,25 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
+import { env } from "./config/env";
 import { bookingRouter, internalBookingRouter } from "./routes/booking.routes";
 
 export const app = express();
 
-app.use(cors());
+const allowedOrigins = new Set([env.FRONTEND_ORIGIN]);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Origin not allowed by CORS"));
+    },
+  }),
+);
 app.use(helmet());
 app.use(express.json());
 app.use(morgan("dev"));

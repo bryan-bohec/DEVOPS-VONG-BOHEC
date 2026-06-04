@@ -18,9 +18,9 @@ import { login } from "../services/api";
 import axios from "axios";
 import type { User } from "../types";
 
-interface Props {
+type Props = Readonly<{
   onLogin: (user: User, token: string) => void;
-}
+}>;
 
 export default function LoginPage({ onLogin }: Props) {
   const [email, setEmail] = useState("");

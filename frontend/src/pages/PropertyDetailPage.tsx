@@ -30,9 +30,9 @@ import "react-day-picker/style.css";
 import { getProperty, getPropertyBookedDates, createBooking } from "../services/api";
 import type { Property, User } from "../types";
 
-interface Props {
+type Props = Readonly<{
   user: User | null;
-}
+}>;
 
 export default function PropertyDetailPage({ user }: Props) {
   const { id } = useParams<{ id: string }>();
@@ -127,11 +127,114 @@ export default function PropertyDetailPage({ user }: Props) {
 
   if (!property) return null;
 
+  const canTenantBook = user?.role === "tenant" && property.is_available;
+
   const typeLabels: Record<string, string> = {
     apartment: "Appartement",
     house: "Maison",
     studio: "Studio",
     villa: "Villa",
+  };
+
+  const renderBookingPanel = () => {
+    if (canTenantBook) {
+      return (
+        <>
+          {bookingMsg && <Alert severity="success" sx={{ mb: 2 }}>{bookingMsg}</Alert>}
+          {bookingError && <Alert severity="error" sx={{ mb: 2 }}>{bookingError}</Alert>}
+
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Sélectionnez vos dates (arrivée → départ)
+          </Typography>
+
+          <Box
+            sx={{
+              "& .rdp-root": {
+                "--rdp-accent-color": "var(--mui-palette-primary-main, #1976d2)",
+                "--rdp-accent-background-color": "var(--mui-palette-primary-light, #e3f2fd)",
+                "--rdp-range_middle-background-color": "var(--mui-palette-primary-light, #e3f2fd)",
+                "--rdp-range_middle-color": "var(--mui-palette-primary-dark, #0d47a1)",
+                fontSize: "0.85rem",
+                width: "100%",
+              },
+              "& .rdp-disabled": {
+                color: "#ccc !important",
+                textDecoration: "line-through",
+                backgroundColor: "#fef2f2 !important",
+              },
+              mb: 2,
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <DayPicker
+              mode="range"
+              locale={fr}
+              selected={dateRange}
+              onSelect={setDateRange}
+              disabled={[
+                { before: today },
+                ...disabledDays.map((d) => d),
+              ]}
+              numberOfMonths={1}
+            />
+          </Box>
+
+          {dateRange?.from && dateRange?.to && days > 0 && (
+            <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: "action.hover" }}>
+              <Typography variant="body2">
+                <strong>{format(dateRange.from, "dd/MM/yyyy")}</strong> → <strong>{format(dateRange.to, "dd/MM/yyyy")}</strong>
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                {days} nuit(s) × {property.price_per_night} € = <strong>{days * property.price_per_night} €</strong>
+              </Typography>
+            </Paper>
+          )}
+
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            disabled={bookingLoading || !dateRange?.from || !dateRange?.to || days <= 0}
+            onClick={handleBooking}
+          >
+            {bookingLoading ? <CircularProgress size={22} color="inherit" /> : "Réserver"}
+          </Button>
+
+          <Box sx={{ mt: 2, justifyContent: "center", display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ width: 12, height: 12, bgcolor: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 0.5 }} />
+            <Typography variant="caption" color="text.secondary">Indisponible</Typography>
+          </Box>
+        </>
+      );
+    }
+
+    if (!user) {
+      return (
+        <Box sx={{ textAlign: "center", py: 1 }}>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>
+            Connectez-vous pour réserver ce logement.
+          </Typography>
+          <Button variant="contained" component={RouterLink} to="/login" fullWidth>
+            Se connecter
+          </Button>
+        </Box>
+      );
+    }
+
+    if (property.is_available === false) {
+      return (
+        <Typography color="text.secondary" sx={{ textAlign: "center", py: 1 }}>
+          Ce logement n'est pas disponible actuellement.
+        </Typography>
+      );
+    }
+
+    return (
+      <Typography color="text.secondary" sx={{ textAlign: "center", py: 1 }}>
+        Seuls les locataires peuvent réserver.
+      </Typography>
+    );
   };
 
   return (
@@ -245,90 +348,7 @@ export default function PropertyDetailPage({ user }: Props) {
 
             <Divider sx={{ my: 2.5 }} />
 
-            {user && user.role === "tenant" && property.is_available ? (
-              <>
-                {bookingMsg && <Alert severity="success" sx={{ mb: 2 }}>{bookingMsg}</Alert>}
-                {bookingError && <Alert severity="error" sx={{ mb: 2 }}>{bookingError}</Alert>}
-
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Sélectionnez vos dates (arrivée → départ)
-                </Typography>
-
-                <Box
-                  sx={{
-                    "& .rdp-root": {
-                      "--rdp-accent-color": "var(--mui-palette-primary-main, #1976d2)",
-                      "--rdp-accent-background-color": "var(--mui-palette-primary-light, #e3f2fd)",
-                      "--rdp-range_middle-background-color": "var(--mui-palette-primary-light, #e3f2fd)",
-                      "--rdp-range_middle-color": "var(--mui-palette-primary-dark, #0d47a1)",
-                      fontSize: "0.85rem",
-                      width: "100%",
-                    },
-                    "& .rdp-disabled": {
-                      color: "#ccc !important",
-                      textDecoration: "line-through",
-                      backgroundColor: "#fef2f2 !important",
-                    },
-                    mb: 2,
-                    display: "flex",
-                    justifyContent: "center",
-                  }}
-                >
-                  <DayPicker
-                    mode="range"
-                    locale={fr}
-                    selected={dateRange}
-                    onSelect={setDateRange}
-                    disabled={[
-                      { before: today },
-                      ...disabledDays.map((d) => d),
-                    ]}
-                    numberOfMonths={1}
-                  />
-                </Box>
-
-                {dateRange?.from && dateRange?.to && days > 0 && (
-                  <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: "action.hover" }}>
-                    <Typography variant="body2">
-                      <strong>{format(dateRange.from, "dd/MM/yyyy")}</strong> → <strong>{format(dateRange.to, "dd/MM/yyyy")}</strong>
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 0.5 }}>
-                      {days} nuit(s) × {property.price_per_night} € = <strong>{days * property.price_per_night} €</strong>
-                    </Typography>
-                  </Paper>
-                )}
-
-                <Button
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  disabled={bookingLoading || !dateRange?.from || !dateRange?.to || days <= 0}
-                  onClick={handleBooking}
-                >
-                  {bookingLoading ? <CircularProgress size={22} color="inherit" /> : "Réserver"}
-                </Button>
-
-                <Box sx={{ mt: 2, justifyContent: "center", display: "flex", alignItems: "center", gap: 1 }}>
-                  <Box sx={{ width: 12, height: 12, bgcolor: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 0.5 }} />
-                  <Typography variant="caption" color="text.secondary">Indisponible</Typography>
-                </Box>
-              </>
-            ) : !user ? (
-              <Box sx={{ textAlign: "center", py: 1 }}>
-                <Typography color="text.secondary" sx={{ mb: 2 }}>
-                  Connectez-vous pour réserver ce logement.
-                </Typography>
-                <Button variant="contained" component={RouterLink} to="/login" fullWidth>
-                  Se connecter
-                </Button>
-              </Box>
-            ) : (
-              <Typography color="text.secondary" sx={{ textAlign: "center", py: 1 }}>
-                {!property.is_available
-                  ? "Ce logement n'est pas disponible actuellement."
-                  : "Seuls les locataires peuvent réserver."}
-              </Typography>
-            )}
+                {renderBookingPanel()}
           </Paper>
         </Grid>
       </Grid>

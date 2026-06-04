@@ -9,6 +9,7 @@ const envSchema = z.object({
   DATABASE_URL: z
     .string()
     .default("postgresql://postgres:postgres@localhost:5432/property_db?schema=public"),
+  FRONTEND_ORIGIN: z.string().url().default("http://localhost:5173"),
   JWT_SECRET: z.string().min(12).default("super-secret-jwt-key"),
   BOOKING_SERVICE_URL: z.string().url().default("http://booking-service:3003"),
 });

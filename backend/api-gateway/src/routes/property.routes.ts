@@ -19,7 +19,8 @@ propertyRouter.get("/:id", async (request, response) =>
     request,
     response,
     targetBaseUrl: env.PROPERTY_SERVICE_URL,
-    targetPath: `/properties/${request.params.id}`,
+    targetPath: "/properties/:id",
+    pathParams: { id: request.params.id },
   }),
 );
 
@@ -28,7 +29,8 @@ propertyRouter.get("/:id/availability", async (request, response) =>
     request,
     response,
     targetBaseUrl: env.PROPERTY_SERVICE_URL,
-    targetPath: `/properties/${request.params.id}/availability`,
+    targetPath: "/properties/:id/availability",
+    pathParams: { id: request.params.id },
   }),
 );
 
@@ -37,7 +39,8 @@ propertyRouter.get("/:id/booked-dates", async (request, response) =>
     request,
     response,
     targetBaseUrl: env.PROPERTY_SERVICE_URL,
-    targetPath: `/properties/${request.params.id}/booked-dates`,
+    targetPath: "/properties/:id/booked-dates",
+    pathParams: { id: request.params.id },
   }),
 );
 
@@ -55,7 +58,8 @@ propertyRouter.put("/:id", requireAuth, requireRole("owner"), async (request, re
     request,
     response,
     targetBaseUrl: env.PROPERTY_SERVICE_URL,
-    targetPath: `/properties/${request.params.id}`,
+    targetPath: "/properties/:id",
+    pathParams: { id: request.params.id },
   }),
 );
 
@@ -64,6 +68,7 @@ propertyRouter.delete("/:id", requireAuth, requireRole("owner"), async (request,
     request,
     response,
     targetBaseUrl: env.PROPERTY_SERVICE_URL,
-    targetPath: `/properties/${request.params.id}`,
+    targetPath: "/properties/:id",
+    pathParams: { id: request.params.id },
   }),
 );

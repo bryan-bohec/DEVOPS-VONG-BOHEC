@@ -5,6 +5,33 @@ import Navbar from "./components/Navbar";
 import { getCurrentUser, setAuthToken } from "./services/api";
 import type { User } from "./types";
 
+function sanitizeUserForStorage(value: unknown): User | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const candidate = value as Partial<User>;
+  if (
+    typeof candidate.id !== "number" ||
+    typeof candidate.email !== "string" ||
+    typeof candidate.first_name !== "string" ||
+    typeof candidate.last_name !== "string" ||
+    (candidate.role !== "tenant" && candidate.role !== "owner") ||
+    typeof candidate.created_at !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    id: candidate.id,
+    email: candidate.email,
+    first_name: candidate.first_name,
+    last_name: candidate.last_name,
+    role: candidate.role,
+    created_at: candidate.created_at,
+  };
+}
+
 const HomePage = lazy(() => import("./pages/HomePage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
@@ -42,13 +69,13 @@ const theme = createTheme({
   },
   shape: { borderRadius: 12 },
   typography: {
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    h1: { fontFamily: "'Outfit', sans-serif", fontWeight: 700, letterSpacing: "-0.02em" },
-    h2: { fontFamily: "'Outfit', sans-serif", fontWeight: 700, letterSpacing: "-0.02em" },
-    h3: { fontFamily: "'Outfit', sans-serif", fontWeight: 600, letterSpacing: "-0.01em" },
-    h4: { fontFamily: "'Outfit', sans-serif", fontWeight: 600, letterSpacing: "-0.01em" },
-    h5: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
-    h6: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
+    fontFamily: "'Segoe UI', 'Trebuchet MS', sans-serif",
+    h1: { fontFamily: "'Trebuchet MS', 'Segoe UI', sans-serif", fontWeight: 700, letterSpacing: "-0.02em" },
+    h2: { fontFamily: "'Trebuchet MS', 'Segoe UI', sans-serif", fontWeight: 700, letterSpacing: "-0.02em" },
+    h3: { fontFamily: "'Trebuchet MS', 'Segoe UI', sans-serif", fontWeight: 600, letterSpacing: "-0.01em" },
+    h4: { fontFamily: "'Trebuchet MS', 'Segoe UI', sans-serif", fontWeight: 600, letterSpacing: "-0.01em" },
+    h5: { fontFamily: "'Trebuchet MS', 'Segoe UI', sans-serif", fontWeight: 600 },
+    h6: { fontFamily: "'Trebuchet MS', 'Segoe UI', sans-serif", fontWeight: 600 },
     button: { textTransform: "none" as const, fontWeight: 600, letterSpacing: "0.01em" },
   },
   components: {
@@ -148,8 +175,13 @@ function App() {
       setAuthToken(token);
       try {
         const response = await getCurrentUser();
-        setUser(response.data);
-        localStorage.setItem("user", JSON.stringify(response.data));
+        const safeUser = sanitizeUserForStorage(response.data);
+        if (!safeUser) {
+          throw new Error("Invalid user payload");
+        }
+
+        setUser(safeUser);
+        localStorage.setItem("user", JSON.stringify(safeUser));
       } catch {
         setAuthToken(null);
         localStorage.removeItem("accessToken");
@@ -160,10 +192,15 @@ function App() {
   }, []);
 
   const handleLogin = (u: User, token: string) => {
+    const safeUser = sanitizeUserForStorage(u);
+    if (!safeUser) {
+      return;
+    }
+
     setAuthToken(token);
-    setUser(u);
+    setUser(safeUser);
     localStorage.setItem("accessToken", token);
-    localStorage.setItem("user", JSON.stringify(u));
+    localStorage.setItem("user", JSON.stringify(safeUser));
   };
 
   const handleLogout = () => {
