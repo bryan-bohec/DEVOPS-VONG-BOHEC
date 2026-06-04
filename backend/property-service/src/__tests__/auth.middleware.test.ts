@@ -49,6 +49,57 @@ describe("property auth middlewares", () => {
     expect(request.user?.role).toBe("owner");
   });
 
+  it("requireAuth rejects non-object payload", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue("bad" as never);
+
+    const request = {
+      headers: {
+        authorization: "Bearer ok",
+      },
+    } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("requireAuth rejects payload with invalid sub", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue({ sub: "bad", email: "x", role: "owner" } as never);
+
+    const request = {
+      headers: {
+        authorization: "Bearer ok",
+      },
+    } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("requireAuth parses numeric string sub", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue({ sub: "12", email: "x", role: "owner" } as never);
+
+    const request = {
+      headers: {
+        authorization: "Bearer ok",
+      },
+    } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(request.user?.sub).toBe(12);
+    expect(next).toHaveBeenCalled();
+  });
+
   it("requireOwner blocks tenant role", () => {
     const request = { user: { sub: 1, email: "x", role: "tenant" } } as AuthenticatedRequest;
     const response = createResponse();

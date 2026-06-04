@@ -59,4 +59,43 @@ describe("booking requireAuth", () => {
     expect(next).toHaveBeenCalled();
     expect(request.user?.sub).toBe(1);
   });
+
+  it("returns 401 when decoded payload is not an object", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue("bad-payload" as never);
+
+    const request = { headers: { authorization: "Bearer good" } } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 when decoded payload has missing email", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue({ sub: 1, role: "tenant" } as never);
+
+    const request = { headers: { authorization: "Bearer good" } } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("accepts numeric string sub in decoded payload", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue({ sub: "11", email: "x", role: "tenant" } as never);
+
+    const request = { headers: { authorization: "Bearer good" } } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(request.user?.sub).toBe(11);
+    expect(next).toHaveBeenCalled();
+  });
 });

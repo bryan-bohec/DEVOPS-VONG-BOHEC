@@ -77,4 +77,63 @@ describe("auth-service requireAuth", () => {
     });
     expect(next).toHaveBeenCalled();
   });
+
+  it("returns 401 when decoded payload is a string", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue("invalid-payload" as never);
+
+    const request = {
+      headers: {
+        authorization: "Bearer valid",
+      },
+    } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 when payload has invalid sub", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue({
+      sub: "abc",
+      email: "john@example.com",
+      role: "tenant",
+    } as never);
+
+    const request = {
+      headers: {
+        authorization: "Bearer valid",
+      },
+    } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("accepts payload with numeric-string sub", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue({
+      sub: "7",
+      email: "john@example.com",
+      role: "tenant",
+    } as never);
+
+    const request = {
+      headers: {
+        authorization: "Bearer valid",
+      },
+    } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(request.user?.sub).toBe(7);
+    expect(next).toHaveBeenCalled();
+  });
 });

@@ -101,4 +101,72 @@ describe("proxyRequest", () => {
       code: "ECONNREFUSED",
     });
   });
+
+  it("returns 400 when path param is missing", async () => {
+    const request = {
+      method: "GET",
+      query: {},
+      body: {},
+      headers: {},
+    } as unknown as AuthenticatedRequest;
+
+    const response = createResponse();
+
+    await proxyRequest({
+      request,
+      response: response as never,
+      targetBaseUrl: "http://property-service:3002",
+      targetPath: "/properties/:id",
+    });
+
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({ message: "Invalid route parameter." });
+    expect(axios.request).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when path param value is invalid", async () => {
+    const request = {
+      method: "GET",
+      query: {},
+      body: {},
+      headers: {},
+    } as unknown as AuthenticatedRequest;
+
+    const response = createResponse();
+
+    await proxyRequest({
+      request,
+      response: response as never,
+      targetBaseUrl: "http://property-service:3002",
+      targetPath: "/properties/:id",
+      pathParams: { id: "1/2" },
+    });
+
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({ message: "Invalid route parameter." });
+    expect(axios.request).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when path param value is an array", async () => {
+    const request = {
+      method: "GET",
+      query: {},
+      body: {},
+      headers: {},
+    } as unknown as AuthenticatedRequest;
+
+    const response = createResponse();
+
+    await proxyRequest({
+      request,
+      response: response as never,
+      targetBaseUrl: "http://booking-service:3003",
+      targetPath: "/bookings/:id",
+      pathParams: { id: ["1", "2"] },
+    });
+
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({ message: "Invalid route parameter." });
+    expect(axios.request).not.toHaveBeenCalled();
+  });
 });

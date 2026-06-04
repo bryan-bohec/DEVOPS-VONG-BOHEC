@@ -78,6 +78,65 @@ describe("gateway auth middlewares", () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects token payload when jwt.verify returns a string", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue("not-an-object" as never);
+
+    const request = {
+      headers: {
+        authorization: "Bearer valid-token",
+      },
+    } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("rejects token payload with invalid role", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue({
+      sub: 9,
+      email: "tenant@example.com",
+      role: "admin",
+    } as never);
+
+    const request = {
+      headers: {
+        authorization: "Bearer valid-token",
+      },
+    } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("parses numeric string sub from token payload", () => {
+    vi.spyOn(jwt, "verify").mockReturnValue({
+      sub: "42",
+      email: "tenant@example.com",
+      role: "tenant",
+    } as never);
+
+    const request = {
+      headers: {
+        authorization: "Bearer valid-token",
+      },
+    } as unknown as AuthenticatedRequest;
+    const response = createResponse();
+    const next = vi.fn();
+
+    requireAuth(request, response as never, next);
+
+    expect(request.user?.sub).toBe(42);
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
   it("enforces allowed roles", () => {
     const onlyOwner = requireRole("owner");
 
