@@ -1,0 +1,29 @@
+Projet DevOps
+Travail en binôme.
+Sujet de projet : libre.
+Langage de programmation : libre.
+But
+Développer une application en respectant les règles du DevOps :
+- Dépôt Git
+- Pipeline CI
+- Architecture logicielle en couches :
+o Data
+o Services
+o Controller (web)
+- Au moins deux services back (intégrés avec Docker)
+- Tests de toutes le couches avec framework de :
+o Tests unitaire
+o Mocks web
+- Bonne couverture de code
+- Qualité logicielle élevée
+Pas besoin de faire de la Continuous Delivery (hors programme).
+Option (noté en bonus)
+- Front Web
+- Base de données
+Remise du projet
+- Sur Moodle
+- Date limite : 21 juin
+- Rapport écrit :
+o Qui montre l’architecture logicielle (schéma) et qui contient tous les
+rapports (de tests, de couverture de code, de qualité...)
+o Qui contient une copie d’écran des Google labs faits.
