@@ -26,7 +26,13 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 app.get("/health", (_request, response) => {
-  response.json({ status: "ok", service: "auth-service" });
+  response.json({
+    status: "ok",
+    service: "auth-service",
+    version: process.env.npm_package_version ?? "1.0.0",
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.use("/auth", authRouter);
