@@ -1,6 +1,6 @@
 # LocaHome - Application de location de logement
 
-Application de location de logement basée sur une architecture microservices.
+Application de location de logement basée sur une architecture microservices, réalisée dans le cadre du cours d'architecture des systèmes d'informations, repris pour le completer avec le projet de DevOps.
 
 ## Stack technique
 
@@ -12,6 +12,9 @@ Application de location de logement basée sur une architecture microservices.
 | Base de données | PostgreSQL 17 (une base par service) |
 | Authentification | JWT (JSON Web Tokens) |
 | Déploiement | Docker, Docker Compose |
+| CI | GitHub Actions |
+| Qualité & couverture | SonarCloud, Codecov |
+| Tests | Vitest, nock, supertest |
 
 ## Architecture
 
@@ -47,7 +50,7 @@ C'est tout. Pas besoin d'installer Node.js, PostgreSQL ou quoi que ce soit d'aut
 ```bash
 # 1. Cloner le repo
 git clone <url-du-repo>
-cd ALIF82-WENG-BOHEC-LIN-VONG-LOPESDESOUSA-THIBOUT
+cd DEVOPS-VONG-BOHEC
 
 # 2. Lancer toute la stack
 docker compose up --build -d
@@ -226,6 +229,23 @@ L'application utilise des JWT (JSON Web Tokens) :
 4. Chaque requête authentifiée envoie le header `Authorization: Bearer <token>`
 5. Le gateway vérifie le token et injecte les headers `x-user-id`, `x-user-role`, `x-user-email` vers les services en aval
 
+## CI / Qualité
+
+Le pipeline GitHub Actions s'exécute à chaque push et pull request sur `main` :
+
+- **Tests & couverture** — Vitest sur les 4 services backend (tests unitaires, mocks web avec nock, tests de routes avec supertest)
+- **Build Docker** — chaque service est buildé en image Docker
+- **SonarCloud** — analyse statique de la qualité du code
+- **Codecov** — rapport de couverture de code
+
+Pour lancer les tests localement sur un service :
+
+```bash
+cd backend/auth-service   # ou api-gateway, property-service, booking-service
+npm ci
+npm run test:coverage
+```
+
 ## Auteurs
 
-ALIF82, WENG, BOHEC, LIN, VONG, LOPES DE SOUSA, THIBOUT
+VONG, BOHEC
