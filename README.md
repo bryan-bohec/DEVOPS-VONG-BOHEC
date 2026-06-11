@@ -1,6 +1,6 @@
 # LocaHome - Application de location de logement
 
-Application de location de logement basée sur une architecture microservices, réalisée dans le cadre du cours d'architecture des systèmes d'informations, repris pour le completer avec le projet de DevOps.
+Application de location de logement basée sur une architecture microservices, réalisée dans le cadre du cours d'architecture des systèmes d'informations, repris pour le completer avec le projet de DevOps
 
 ## Stack technique
 
