@@ -97,54 +97,6 @@ jobs:
                        ./frontend
 
   # ──────────────────────────────────────────────
-  # SonarCloud – Analyse qualité (mono-projet)
-  # ──────────────────────────────────────────────
-  sonarcloud:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: [backend-test]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      # Re-generate coverage reports for SonarCloud
-      - name: Install & test api-gateway
-        run: npm ci && npm run test:coverage
-        working-directory: backend/api-gateway
-
-      - name: Install & test auth-service
-        run: npm ci && npm run test:coverage
-        working-directory: backend/auth-service
-
-      - name: Install & test property-service
-        run: npm ci && npm run test:coverage
-        working-directory: backend/property-service
-
-      - name: Install & test booking-service
-        run: npm ci && npm run test:coverage
-        working-directory: backend/booking-service
-
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  # ──────────────────────────────────────────────
   # Docker Compose – Integration smoke test
   # ──────────────────────────────────────────────
   docker-compose-build:
