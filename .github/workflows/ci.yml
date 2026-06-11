@@ -35,15 +35,15 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: backend/${{ matrix.service }}/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install dependencies (workspaces)
         run: npm ci
-        working-directory: backend/${{ matrix.service }}
+        working-directory: backend
 
       - name: Run Tests with Coverage
-        run: npm run test:coverage
-        working-directory: backend/${{ matrix.service }}
+        run: npm run test:coverage --workspace=${{ matrix.service }}
+        working-directory: backend
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -58,7 +58,7 @@ jobs:
         run: |
           docker build -t ${{ matrix.service }}:${{ github.sha }} \
                        -f backend/${{ matrix.service }}/Dockerfile \
-                       ./backend/${{ matrix.service }}
+                       ./backend
 
   # ──────────────────────────────────────────────
   # Frontend – Build & Docker
@@ -115,22 +115,18 @@ jobs:
         with:
           node-version: "22"
 
-      # Re-generate coverage reports for SonarCloud
-      - name: Install & test api-gateway
-        run: npm ci && npm run test:coverage
-        working-directory: backend/api-gateway
+      # Re-generate coverage reports for SonarCloud (monorepo workspaces)
+      - name: Install dependencies (workspaces)
+        run: npm ci
+        working-directory: backend
 
-      - name: Install & test auth-service
-        run: npm ci && npm run test:coverage
-        working-directory: backend/auth-service
-
-      - name: Install & test property-service
-        run: npm ci && npm run test:coverage
-        working-directory: backend/property-service
-
-      - name: Install & test booking-service
-        run: npm ci && npm run test:coverage
-        working-directory: backend/booking-service
+      - name: Tests + coverage (tous les services)
+        run: |
+          npm run test:coverage --workspace=api-gateway
+          npm run test:coverage --workspace=auth-service
+          npm run test:coverage --workspace=property-service
+          npm run test:coverage --workspace=booking-service
+        working-directory: backend
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4

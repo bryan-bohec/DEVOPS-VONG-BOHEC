@@ -11,7 +11,8 @@ services:
 
   api-gateway:
     build:
-      context: ./backend/api-gateway
+      context: ./backend
+      dockerfile: api-gateway/Dockerfile
     ports:
       - "3000:3000"
     environment:
@@ -28,7 +29,8 @@ services:
 
   auth-service:
     build:
-      context: ./backend/auth-service
+      context: ./backend
+      dockerfile: auth-service/Dockerfile
     ports:
       - "3001:3001"
     environment:
@@ -44,7 +46,8 @@ services:
 
   property-service:
     build:
-      context: ./backend/property-service
+      context: ./backend
+      dockerfile: property-service/Dockerfile
     ports:
       - "3002:3002"
     environment:
@@ -60,7 +63,8 @@ services:
 
   booking-service:
     build:
-      context: ./backend/booking-service
+      context: ./backend
+      dockerfile: booking-service/Dockerfile
     ports:
       - "3003:3003"
     environment:

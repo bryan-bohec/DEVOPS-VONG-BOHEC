@@ -1,0 +1,17 @@
+{
+  "name": "vong-bohec-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo backend (npm workspaces) — microservices + code partagé",
+  "license": "ISC",
+  "workspaces": [
+    "shared",
+    "api-gateway",
+    "auth-service",
+    "property-service",
+    "booking-service"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace=@vong-bohec/shared"
+  }
+}

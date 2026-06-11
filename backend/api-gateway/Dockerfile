@@ -1,13 +1,25 @@
+# Build context = ./backend (monorepo npm workspaces).
 FROM node:22-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
+# --- Dépendances : copie des manifestes pour profiter du cache Docker ---
+# npm ci (workspaces) exige la présence de tous les package.json des workspaces.
+COPY package.json package-lock.json ./
+COPY shared/package.json ./shared/
+COPY api-gateway/package.json ./api-gateway/
+COPY auth-service/package.json ./auth-service/
+COPY property-service/package.json ./property-service/
+COPY booking-service/package.json ./booking-service/
+RUN npm ci
 
-COPY tsconfig.json ./
-COPY src ./src
+# --- Build du code partagé ---
+COPY shared ./shared
+RUN npm run build --workspace=@vong-bohec/shared
 
+# --- Build du service ---
+COPY api-gateway ./api-gateway
+WORKDIR /app/api-gateway
 RUN npm run build
 
 CMD ["npm", "run", "start"]
